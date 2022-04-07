@@ -3,11 +3,10 @@
 pragma solidity ^0.8.10;
 
 import "./Item.sol";
-import "./ItemNFT.sol";
 
-contract ItemManager is ItemNFT {
-    address buyer;
-    address seller;
+contract ItemManager {
+    address itemBuyer;
+    address itemCreator;
 
     enum SupplyChainState{Created, Paid, Delivered}
 
@@ -25,8 +24,8 @@ contract ItemManager is ItemNFT {
     event DeliverToAddress(address _buyer);
 
     function createItem(string memory _identifier, uint _itemPrice) public {
-        seller = msg.sender;
-        Item item = new Item(this, _itemPrice, itemIndex, seller);
+        itemCreator = msg.sender;
+        Item item = new Item(this, _itemPrice, itemIndex, itemCreator);
         items[itemIndex]._item = item;
         items[itemIndex]._identifier = _identifier;
         items[itemIndex]._itemPrice = _itemPrice;
@@ -36,23 +35,22 @@ contract ItemManager is ItemNFT {
         itemIndex++;
     }
 
-    function triggerPayment(uint _itemIndex) public payable {
+    function triggerPayment(uint _itemIndex, address _itemBuyer) external payable {
         Item item = items[_itemIndex]._item;
         require(address(item) == msg.sender, "Only items are allowed to update themselves");
         require(item.priceInWei() == msg.value, "Please pay the correct amount");
         require(items[_itemIndex]._state == SupplyChainState.Created, "Item is further along in the chain");
-        buyer = msg.sender;
         items[_itemIndex]._state = SupplyChainState.Paid;
+        itemBuyer = _itemBuyer;
 
         emit SupplyChainStep(_itemIndex, uint(items[_itemIndex]._state), address(items[_itemIndex]._item));
     }
 
-    function triggerDelivery(uint _itemIndex) public {
+    function triggerDelivery(uint _itemIndex) internal {
         require(items[_itemIndex]._state == SupplyChainState.Paid, "Cost of item has not been paid");
-        safeTransferFrom(seller, buyer, _itemIndex);
         items[_itemIndex]._state = SupplyChainState.Delivered;
 
         emit SupplyChainStep(_itemIndex, uint(items[_itemIndex]._state), address(items[_itemIndex]._item));
-        emit DeliverToAddress(buyer);
+        emit DeliverToAddress(itemBuyer);
     }
 }
