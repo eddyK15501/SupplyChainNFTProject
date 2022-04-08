@@ -17,7 +17,7 @@ contract ItemManager {
     }
 
     mapping(uint => S_Item) public items;
-    uint itemIndex;
+    uint public itemIndex;
 
     event SupplyChainStep(uint _itemIndex, uint _step, address _itemAddress);
 
