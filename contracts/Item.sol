@@ -14,9 +14,11 @@ contract Item is ItemNFT {
     uint public pricePaid;
     uint public index;
     address public seller;
-    address buyer;
+    address public buyer;
      
     ItemManager parentContract;
+
+    event DeliverToAddress(address _buyer);
 
     constructor(ItemManager _parentContract, uint _priceInWei, uint _index, address _seller) {
         parentContract = _parentContract;
@@ -27,21 +29,25 @@ contract Item is ItemNFT {
         mintItem(seller);
     }
 
-    function payForItem(uint _amount) public payable {
+   receive() external payable {
         require(pricePaid == 0, "Item is paid already");
-        require(_amount == priceInWei, "Only full payments allowed");
-        pricePaid += _amount;
-
-        (bool success,) = address(parentContract).call{value:_amount}(abi.encodeWithSignature("triggerPayment(uint256)", index, msg.sender));
-        require(success, "The transaction wasn't successful...Canceling");
-
+        require(msg.value == priceInWei, "Only full payments allowed");
+        pricePaid += msg.value;
         buyer = msg.sender;
+
+        (bool success,) = address(parentContract).call{value:msg.value}(abi.encodeWithSignature("triggerPayment(uint256)", index));
+        require(success, "The transaction wasn't successful...Canceling");
     }
 
-    function deliverItem() public {
+    function deliverItem() external {
+        require(msg.sender == buyer, "You are not the buyer");
         ItemManagerInterface(address(parentContract)).triggerDelivery(index);
-        safeTransferFrom(seller, buyer, index);
+
+        _transfer(seller, buyer, index + 1);
+
+        emit DeliverToAddress(buyer);
     }
 
     fallback() external {}
+
 }

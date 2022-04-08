@@ -5,7 +5,6 @@ pragma solidity ^0.8.10;
 import "./Item.sol";
 
 contract ItemManager {
-    address itemBuyer;
     address itemCreator;
 
     enum SupplyChainState{Created, Paid, Delivered}
@@ -21,7 +20,6 @@ contract ItemManager {
     uint itemIndex;
 
     event SupplyChainStep(uint _itemIndex, uint _step, address _itemAddress);
-    event DeliverToAddress(address _buyer);
 
     function createItem(string memory _identifier, uint _itemPrice) public {
         itemCreator = msg.sender;
@@ -35,22 +33,21 @@ contract ItemManager {
         itemIndex++;
     }
 
-    function triggerPayment(uint _itemIndex, address _itemBuyer) external payable {
+    function triggerPayment(uint _itemIndex) public payable {
         Item item = items[_itemIndex]._item;
         require(address(item) == msg.sender, "Only items are allowed to update themselves");
         require(item.priceInWei() == msg.value, "Please pay the correct amount");
         require(items[_itemIndex]._state == SupplyChainState.Created, "Item is further along in the chain");
         items[_itemIndex]._state = SupplyChainState.Paid;
-        itemBuyer = _itemBuyer;
 
         emit SupplyChainStep(_itemIndex, uint(items[_itemIndex]._state), address(items[_itemIndex]._item));
     }
 
-    function triggerDelivery(uint _itemIndex) internal {
+    function triggerDelivery(uint _itemIndex) external {
+        require(address(items[_itemIndex]._item) == msg.sender, "Only items are allowed to update themselves");
         require(items[_itemIndex]._state == SupplyChainState.Paid, "Cost of item has not been paid");
         items[_itemIndex]._state = SupplyChainState.Delivered;
 
         emit SupplyChainStep(_itemIndex, uint(items[_itemIndex]._state), address(items[_itemIndex]._item));
-        emit DeliverToAddress(itemBuyer);
     }
 }
