@@ -35,7 +35,7 @@ contract ItemManager {
 
     function triggerPayment(uint _itemIndex) public payable {
         Item item = items[_itemIndex]._item;
-        require(address(item) == msg.sender, "Only items are allowed to update themselves");
+        require(address(item) == msg.sender, "You must call this function from the Item Contract");
         require(item.priceInWei() == msg.value, "Please pay the correct amount");
         require(items[_itemIndex]._state == SupplyChainState.Created, "Item is further along in the chain");
         items[_itemIndex]._state = SupplyChainState.Paid;
@@ -44,7 +44,7 @@ contract ItemManager {
     }
 
     function triggerDelivery(uint _itemIndex) external {
-        require(address(items[_itemIndex]._item) == msg.sender, "Only items are allowed to update themselves");
+        require(address(items[_itemIndex]._item) == msg.sender, "You must call this function from the Item Contract");
         require(items[_itemIndex]._state == SupplyChainState.Paid, "Cost of item has not been paid");
         items[_itemIndex]._state = SupplyChainState.Delivered;
 

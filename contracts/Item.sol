@@ -31,7 +31,7 @@ contract Item is ItemNFT {
 
    receive() external payable {
         require(pricePaid == 0, "Item is paid already");
-        require(msg.value == priceInWei, "Only full payments allowed");
+        require(msg.value == priceInWei, "Please pay the correct amount");
         pricePaid += msg.value;
         buyer = msg.sender;
 
