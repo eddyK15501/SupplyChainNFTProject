@@ -165,7 +165,7 @@ describe("triggerDelivery", async () => {
     const deliverItem = await item1.connect(account2).deliverItem();
 
     expect(deliverItem)
-    .to.emit(itemManager, "SupplyChainStep")
-    .withArgs(0, 2, (await itemManager.items(0))._item);
+      .to.emit(itemManager, "SupplyChainStep")
+      .withArgs(0, 2, (await itemManager.items(0))._item);
     });
 });
