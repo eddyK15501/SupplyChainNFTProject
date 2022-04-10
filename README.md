@@ -1,15 +1,7 @@
-# Basic Sample Hardhat Project
+ItemManager.sol and Item.sol is a contract mimicking a supply chain using blockchain.
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
+You start by creating an item, paying for it, then delivering that item. This is a contract written as a sample code on an Udemy course that I completed. The course is called: Ethereum Blockchain Developer Bootcamp With Solidity.
 
-Try running some of the following tasks:
+I created an ERC721 contract called ItemNFT.sol to add to this project. Whenever you create a new item, a new instance of an Item.sol contract gets created, along with an NFT token to resemble that item.
 
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-node scripts/sample-script.js
-npx hardhat help
-```
+Test code written using ethers.js.

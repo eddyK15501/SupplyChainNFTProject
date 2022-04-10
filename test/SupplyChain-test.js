@@ -73,26 +73,99 @@ describe("triggerPayment", () => {
   });
 
   it('you must pay the correct amount for the item', async () => {
-      const transaction = account1.sendTransaction({
+    const transaction = account1.sendTransaction({
         to: item1.address,
         value: utils.parseEther('0.05')
     });
-      await expect(transaction).to.be.revertedWith("Please pay the correct amount");
+    await expect(transaction).to.be.revertedWith("Please pay the correct amount");
 
-      const transaction2 = account1.sendTransaction({
+    const transaction2 = account1.sendTransaction({
         to: item1.address,
         value: utils.parseEther('0.5')
     });
-      await expect(transaction2).to.be.revertedWith("Please pay the correct amount");
+    await expect(transaction2).to.be.revertedWith("Please pay the correct amount");
+  });
+
+  it('not allowed to pay for the item twice', async () => {
+    await account1.sendTransaction({
+      to: item1.address,
+      value: utils.parseEther('0.1')
+    });
+
+    const transaction2 = account1.sendTransaction({
+      to: item1.address,
+      value: utils.parseEther('0.1')
+    });
+
+    await expect(transaction2).to.be.revertedWith('Item is paid already');
+  });
+
+  it('updates the address of the buyer', async () => {
+    await account1.sendTransaction({
+      to: item1.address,
+      value: utils.parseEther('0.1')
+    });
+    expect(await item1.buyer()).to.eq(account1.address);
   });
 
   it('can emit an event after paying for the item', async () => {
-      const transaction = account1.sendTransaction({
+    const transaction = await account1.sendTransaction({
         to: item1.address,
         value: utils.parseEther('0.1')
     });
-      expect(transaction)
+    expect(transaction)
       .to.emit(itemManager, "SupplyChainStep")
       .withArgs(0, 1, (await itemManager.items(0))._item);
   });
+});
+
+describe("triggerDelivery", async () => {
+  it('function must be called from the Item contract', async () => {
+    await account1.sendTransaction({
+      to: item1.address,
+      value: utils.parseEther('0.1')
+    });
+    await expect(itemManager.connect(account1).triggerPayment(0))
+      .to.be.revertedWith('You must call this function from the Item Contract');
+  });
+
+  it('deliverItem function must be called from the buyer who paid for the item', async () => {
+    await account1.sendTransaction({
+      to: item1.address,
+      value: utils.parseEther('0.1')
+    });
+    await expect(item1.connect(account2).deliverItem())
+      .to.be.revertedWith("You are not the buyer");
+  });
+
+  it('transfers the NFT token after calling he deliverItem function', async () => {
+    await account1.sendTransaction({
+      to: item1.address,
+      value: utils.parseEther('0.1')
+    });
+    await item1.connect(account1).deliverItem();
+    expect(await item1.ownerOf(1)).to.eq(account1.address);
+  });
+
+  it('emits the address of the buyer', async () => {
+    await account1.sendTransaction({
+      to: item1.address,
+      value: utils.parseEther('0.1')
+    });
+    expect(await item1.connect(account1).deliverItem())
+      .to.emit(item1, 'DeliverToAddress')
+      .withArgs(account1.address);
+  });
+
+  it('emits the SupplyChainStep after calling triggerDelivery', async () => {
+    await account2.sendTransaction({
+      to: item1.address,
+      value: utils.parseEther('0.1')
+    });
+    const deliverItem = await item1.connect(account2).deliverItem();
+
+    expect(deliverItem)
+    .to.emit(itemManager, "SupplyChainStep")
+    .withArgs(0, 2, (await itemManager.items(0))._item);
+    });
 });
